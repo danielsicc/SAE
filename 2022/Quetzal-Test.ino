@@ -48,4 +48,5 @@ void loop() {
     c.writeMicroseconds(1000);
     d.writeMicroseconds(1500);
   }
+  Serial.println("Test");
 }
