@@ -3,12 +3,13 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_HMC5883_U.h>
 #include <Adafruit_Sensor.h>
+#include <Adafruit_NeoPixel.h>
 #include <Adafruit_GPS.h>
 #include <Wire.h>
 #include <math.h>
 
 #define GPSSerial Serial1
-#define GPSECHO true
+#define GPSECHO false
 #define IMUECHO false
 #define HMCECHO false
 #define ELRSECHO false
@@ -16,6 +17,7 @@
 uint32_t timer1 = millis();
 uint32_t timer2 = millis();
 
+Adafruit_NeoPixel LED(1, 16, NEO_GRB + NEO_KHZ800);
 SerialPIO Receiver(10, 11);
 CrsfSerial crsf(Receiver, 200000);
 Servo Aileron, Elevator, Motor, Rudder;
@@ -26,6 +28,7 @@ Adafruit_GPS GPS(&GPSSerial);
 float scaler, xv, yv, zv, calibrated_values[3], normal_vector_length, latitud, longitud, latitudDegs, longitudDegs, latObj=32.632648, lonObj=-115.444410, distObj, giroObj;
 boolean scaler_flag = false;
 sensors_event_t event;
+int controlFlag;
 
 void setup(){
   Serial.begin(9600);
@@ -70,9 +73,13 @@ void setup(){
 void setup1(){
   Serial.println("Init GPS");
   GPS.begin(9600);
+  LED.begin();
 
   Serial.print("Init LoRaCo");
   Serial2.begin(9600);
+  LED.clear();
+  LED.setPixelColor(0, LED.Color(0, 0, 50));
+  LED.show();
 }
 
 void loop(){
@@ -91,7 +98,8 @@ void loop1(){
 
 void control(){
   crsf.loop();
-  if(crsf.getChannel(7)>1900){
+  controlFlag=crsf.getChannel(7);
+  if(controlFlag>1900){
     Aileron.writeMicroseconds(crsf.getChannel(1));
     Elevator.writeMicroseconds(crsf.getChannel(2));
     Motor.writeMicroseconds(crsf.getChannel(3));
@@ -208,6 +216,11 @@ void gps(){
 }
 
 void telemetry(){
+  if(controlFlag>1900){
+    LED.clear();
+    LED.setPixelColor(0, LED.Color(0, 50, 0));
+    LED.show();
+  }
   Serial2.println("Testing");
 }
 
